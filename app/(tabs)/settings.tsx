@@ -2,7 +2,7 @@ import { styled } from "nativewind";
 import React from "react";
 import { Text } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
-import ".././global.css";
+import "../../global.css";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
