@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 import "../../global.css";
 
 const PASSWORD_MIN_LENGTH = 8;
@@ -31,6 +32,7 @@ const PASSWORD_RULES = {
 
 export default function SignUpScreen() {
   const { signUp } = useSignUp();
+  const posthog = usePostHog();
   const router = useRouter();
 
   // Form state
@@ -103,6 +105,7 @@ export default function SignUpScreen() {
       if (error) {
         console.error(JSON.stringify(error, null, 2));
         setErrors({ submit: error.message });
+        posthog.capture("user_sign_up_failed", { step: "create" });
         return;
       }
 
@@ -113,15 +116,17 @@ export default function SignUpScreen() {
       if (passwordError) {
         console.error(JSON.stringify(passwordError, null, 2));
         setErrors({ submit: passwordError.message });
+        posthog.capture("user_sign_up_failed", { step: "password" });
         return;
       }
 
-      // Send verification email
+      // Send verification code
       const { error: sendError } = await signUp.verifications.sendEmailCode();
 
       if (sendError) {
         console.error(JSON.stringify(sendError, null, 2));
         setErrors({ submit: sendError.message });
+        posthog.capture("user_sign_up_failed", { step: "verification_send" });
         return;
       }
     } catch (error: any) {
@@ -129,6 +134,7 @@ export default function SignUpScreen() {
         error?.errors?.[0]?.message ||
         "Failed to create account. Please try again.";
       setErrors({ submit: errorMessage });
+      posthog.capture("user_sign_up_failed", { step: "create" });
     } finally {
       setLoading(false);
     }
@@ -147,10 +153,12 @@ export default function SignUpScreen() {
       });
       if (error) {
         setErrors({ code: error.message });
+        posthog.capture("user_sign_up_failed", { step: "verification_check" });
         return;
       }
       // Check if verification was successful
       if (signUp.status === "complete") {
+        posthog.capture("user_signed_up");
         await signUp.finalize({
           navigate: ({ session, decorateUrl }) => {
             // Complete any pending sign-up task before navigating
@@ -177,6 +185,7 @@ export default function SignUpScreen() {
         error?.errors?.[0]?.message ||
         "Invalid verification code. Please try again.";
       setErrors({ code: errorMessage });
+      posthog.capture("user_sign_up_failed", { step: "verification_check" });
     } finally {
       setLoading(false);
     }
@@ -201,6 +210,7 @@ export default function SignUpScreen() {
       setLoading(false);
     }
   };
+
   // Verification screen
   if (isVerificationStep) {
     return (
@@ -387,6 +397,7 @@ export default function SignUpScreen() {
             ]}
             onPress={handleSignUp}
             disabled={loading || !email || !password || !confirmPassword}
+            testID="sign-up-button"
           >
             {loading ? (
               <ActivityIndicator color="#081126" size="small" />

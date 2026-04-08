@@ -1,9 +1,11 @@
-import { ClerkProvider } from "@clerk/expo";
+import { ClerkProvider, useUser } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
-import { useEffect } from "react";
+import { SplashScreen, Stack, usePathname, useGlobalSearchParams } from "expo-router";
+import { useEffect, useRef } from "react";
 import { View } from "react-native";
+import { PostHogProvider } from "posthog-react-native";
+import { posthog } from "../src/config/posthog";
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync();
@@ -12,6 +14,53 @@ const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
 if (!publishableKey) {
   throw new Error("Add your Clerk Publishable Key to the .env file");
+}
+
+// Identifies the signed-in user in PostHog using their Clerk user ID.
+// Must be inside ClerkProvider and PostHogProvider.
+function UserIdentifier() {
+  const { user, isLoaded } = useUser();
+  const identifiedId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (user && identifiedId.current !== user.id) {
+      posthog.identify(user.id, {
+        $set_once: { created_at: user.createdAt?.toISOString() ?? null },
+      });
+      identifiedId.current = user.id;
+    } else if (!user && identifiedId.current !== null) {
+      posthog.reset();
+      identifiedId.current = null;
+    }
+  }, [user, isLoaded]);
+
+  return null;
+}
+
+function RootLayoutInner() {
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
+  const previousPathname = useRef<string | undefined>(undefined);
+
+  // Manual screen tracking for Expo Router
+  useEffect(() => {
+    if (previousPathname.current !== pathname) {
+      posthog.screen(pathname, {
+        previous_screen: previousPathname.current ?? null,
+        ...params,
+      });
+      previousPathname.current = pathname;
+    }
+  }, [pathname, params]);
+
+  return (
+    <>
+      <UserIdentifier />
+      <Stack screenOptions={{ headerShown: false }} />
+    </>
+  );
 }
 
 export default function RootLayout() {
@@ -38,7 +87,17 @@ export default function RootLayout() {
 
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <PostHogProvider
+        client={posthog}
+        debug={__DEV__}
+        autocapture={{
+          captureScreens: false,
+          captureTouches: true,
+          propsToCapture: ["testID"],
+        }}
+      >
+        <RootLayoutInner />
+      </PostHogProvider>
     </ClerkProvider>
   );
 }

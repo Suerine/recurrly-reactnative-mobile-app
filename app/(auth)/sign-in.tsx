@@ -10,10 +10,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 import "../../global.css";
 
 export default function SignInScreen() {
   const { signIn } = useSignIn();
+  const posthog = usePostHog();
 
   const router = useRouter();
 
@@ -74,10 +76,12 @@ export default function SignInScreen() {
       if (error) {
         console.error(JSON.stringify(error, null, 2));
         setErrors({ submit: error.message });
+        posthog.capture("user_sign_in_failed", { method: "password" });
         return;
       }
 
       if (signIn.status === "complete") {
+        posthog.capture("user_signed_in", { method: "password" });
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
             // Complete any pending sign-in task before navigating
@@ -102,6 +106,7 @@ export default function SignInScreen() {
         );
         if (emailFactor) {
           await signIn.mfa.sendEmailCode();
+          posthog.capture("user_mfa_started", { method: "otp" });
           setShowMFA(true);
         }
       } else if (signIn.status === "needs_second_factor") {
@@ -111,7 +116,8 @@ export default function SignInScreen() {
             (factor) => factor.strategy === "email_code",
           );
           if (emailFactor) {
-            await signIn.secondFactor.prepareEmailCodeFactor();
+            await signIn.mfa.sendEmailCode();
+            posthog.capture("user_mfa_started", { method: "otp" });
             setShowMFA(true);
           } else {
             setErrors({ submit: "Unsupported second factor method" });
@@ -123,6 +129,7 @@ export default function SignInScreen() {
         error?.errors?.[0]?.message ||
         "Invalid email or password. Please try again.";
       setErrors({ submit: errorMessage });
+      posthog.capture("user_sign_in_failed", { method: "password" });
     } finally {
       setLoading(false);
     }
@@ -140,6 +147,8 @@ export default function SignInScreen() {
 
       // Check if verification was successful
       if (signIn.status === "complete") {
+        posthog.capture("user_mfa_completed", { method: "otp" });
+        posthog.capture("user_signed_in", { method: "password+mfa" });
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
             // Complete any pending sign-in task before navigating
@@ -350,6 +359,7 @@ export default function SignInScreen() {
             ]}
             onPress={handleSignIn}
             disabled={loading || !email || !password}
+            testID="sign-in-button"
           >
             {loading ? (
               <ActivityIndicator color="#081126" size="small" />

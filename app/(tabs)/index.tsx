@@ -11,6 +11,7 @@ import { styled } from "nativewind";
 import { useState } from "react";
 import { FlatList, Image, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 import images from "../../constants/images";
 import "../../global.css";
 import ListHeading from "../components/ListHeading";
@@ -24,12 +25,24 @@ export default function App() {
     string | null
   >(null);
   const { user } = useUser();
+  const posthog = usePostHog();
 
   const userName = user?.fullName || user?.firstName || "Welcome";
   const userImageUrl = user?.imageUrl;
 
   // Determine correct image source format
   const userImageSource = userImageUrl ? { uri: userImageUrl } : images.avatar;
+
+  const handleSubscriptionPress = (id: string, name: string, category: string | undefined) => {
+    const isExpanding = expandedSubscriptionId !== id;
+    setExpandedSubscriptionId(isExpanding ? id : null);
+    if (isExpanding) {
+      posthog.capture("subscription_card_expanded", {
+        subscription_name: name,
+        subscription_category: category ?? "unknown",
+      });
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
@@ -83,11 +96,7 @@ export default function App() {
           <SubscriptionCard
             {...item}
             expanded={expandedSubscriptionId === item.id}
-            onPress={() =>
-              setExpandedSubscriptionId(
-                expandedSubscriptionId === item.id ? null : item.id,
-              )
-            }
+            onPress={() => handleSubscriptionPress(item.id, item.name, item.category)}
           />
         )}
         extraData={expandedSubscriptionId}
