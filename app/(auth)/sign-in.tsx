@@ -36,7 +36,10 @@ export default function SignInScreen() {
   }
 
   // Check if we're in MFA verification state
-  const isMFAStep = showMFA || signIn?.status === "needs_client_trust";
+  const isMFAStep =
+    showMFA ||
+    signIn?.status === "needs_client_trust" ||
+    signIn?.status === "needs_second_factor";
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -77,12 +80,20 @@ export default function SignInScreen() {
       if (signIn.status === "complete") {
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
+            // Complete any pending sign-in task before navigating
             if (session?.currentTask) {
-              console.log(session?.currentTask);
-              return;
+              console.log("Pending sign-in task:", session.currentTask);
+              // Task will be handled by Clerk's session management
             }
             const url = decorateUrl("/(tabs)");
-            router.replace(url as Href);
+            // Guard against absolute URLs before navigation
+            if (url.startsWith("http")) {
+              if (typeof window !== "undefined") {
+                window.location.href = url;
+              }
+            } else {
+              router.replace(url as Href);
+            }
           },
         });
       } else if (signIn.status === "needs_client_trust") {
@@ -92,6 +103,19 @@ export default function SignInScreen() {
         if (emailFactor) {
           await signIn.mfa.sendEmailCode();
           setShowMFA(true);
+        }
+      } else if (signIn.status === "needs_second_factor") {
+        const secondFactors = signIn.supportedSecondFactors;
+        if (secondFactors && secondFactors.length > 0) {
+          const emailFactor = secondFactors.find(
+            (factor) => factor.strategy === "email_code",
+          );
+          if (emailFactor) {
+            await signIn.secondFactor.prepareEmailCodeFactor();
+            setShowMFA(true);
+          } else {
+            setErrors({ submit: "Unsupported second factor method" });
+          }
         }
       }
     } catch (error: any) {
@@ -118,12 +142,20 @@ export default function SignInScreen() {
       if (signIn.status === "complete") {
         await signIn.finalize({
           navigate: ({ session, decorateUrl }) => {
+            // Complete any pending sign-in task before navigating
             if (session?.currentTask) {
-              console.log(session?.currentTask);
-              return;
+              console.log("Pending sign-in task:", session.currentTask);
+              // Task will be handled by Clerk's session management
             }
             const url = decorateUrl("/(tabs)");
-            router.replace(url as Href);
+            // Guard against absolute URLs before navigation
+            if (url.startsWith("http")) {
+              if (typeof window !== "undefined") {
+                window.location.href = url;
+              }
+            } else {
+              router.replace(url as Href);
+            }
           },
         });
       } else {

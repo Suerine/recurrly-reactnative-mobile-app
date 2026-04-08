@@ -26,7 +26,10 @@ export default function App() {
   const { user } = useUser();
 
   const userName = user?.fullName || user?.firstName || "Welcome";
-  const userProfileImage = user?.imageUrl || images.avatar;
+  const userImageUrl = user?.imageUrl;
+
+  // Determine correct image source format
+  const userImageSource = userImageUrl ? { uri: userImageUrl } : images.avatar;
 
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
@@ -35,10 +38,7 @@ export default function App() {
           <>
             <View className="home-header">
               <View className="home-user">
-                <Image
-                  source={{ uri: userProfileImage }}
-                  className="home-avatar"
-                />
+                <Image source={userImageSource} className="home-avatar" />
                 <Text className="home-user-name">{userName}</Text>
               </View>
 

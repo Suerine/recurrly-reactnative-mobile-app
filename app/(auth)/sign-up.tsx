@@ -153,12 +153,20 @@ export default function SignUpScreen() {
       if (signUp.status === "complete") {
         await signUp.finalize({
           navigate: ({ session, decorateUrl }) => {
+            // Complete any pending sign-up task before navigating
             if (session?.currentTask) {
-              console.log(session?.currentTask);
-              return;
+              console.log("Pending sign-up task:", session.currentTask);
+              // Task will be handled by Clerk's session management
             }
             const url = decorateUrl("/(tabs)");
-            router.replace(url as Href);
+            // Guard against absolute URLs before navigation
+            if (url.startsWith("http")) {
+              if (typeof window !== "undefined") {
+                window.location.href = url;
+              }
+            } else {
+              router.replace(url as Href);
+            }
           },
         });
       } else {
@@ -177,7 +185,6 @@ export default function SignUpScreen() {
   const handleResendCode = async () => {
     setLoading(true);
     try {
-      await signUp.verifications.sendEmailCode();
       const { error } = await signUp.verifications.sendEmailCode();
       if (error) {
         setErrors({ resend: error.message });
