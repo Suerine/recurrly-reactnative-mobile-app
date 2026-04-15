@@ -1,6 +1,7 @@
 import { useClerk } from "@clerk/expo";
 import { useRouter } from "expo-router";
 import { styled } from "nativewind";
+import { usePostHog } from "posthog-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -10,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
-import { usePostHog } from "posthog-react-native";
 import "../../global.css";
 
 const SafeAreaView = styled(RNSafeAreaView);
@@ -37,6 +37,17 @@ const Settings = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Settings</Text>
+        <View style={styles.section}>
+          <Text style={{ color: "#081126" }}>
+            Here you can manage your account settings and preferences.
+          </Text>
+        </View>
+        <View style={styles.section}>
+          <Text style={{ color: "#081126" }}>
+            If you have any questions or need assistance, please contact our
+            support team.
+          </Text>
+        </View>
 
         <View style={styles.section}>
           <Pressable
