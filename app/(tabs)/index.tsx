@@ -1,22 +1,20 @@
-import {
-  HOME_BALANCE,
-  HOME_SUBSCRIPTIONS,
-  UPCOMING_SUBSCRIPTIONS,
-} from "@/constants/data";
+import { HOME_BALANCE, UPCOMING_SUBSCRIPTIONS } from "@/constants/data";
 import { icons } from "@/constants/icons";
 import { formatCurrency } from "@/lib/utils";
 import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
-import { useState } from "react";
-import { FlatList, Image, Text, View } from "react-native";
-import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import { usePostHog } from "posthog-react-native";
+import { useCallback, useState } from "react";
+import { FlatList, Image, Pressable, Text, View } from "react-native";
+import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import images from "../../constants/images";
 import "../../global.css";
+import { CreateSubscriptionModal } from "../components/CreateSubscriptionModal";
 import ListHeading from "../components/ListHeading";
 import SubscriptionCard from "../components/SubscriptionCard";
 import UpcomingSubscriptionCard from "../components/UpcomingSubscriptionCard";
+import { useSubscriptions } from "../context/SubscriptionsContext";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
@@ -24,6 +22,8 @@ export default function App() {
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
+  const { subscriptions, addSubscription } = useSubscriptions();
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const { user } = useUser();
   const posthog = usePostHog();
 
@@ -33,7 +33,11 @@ export default function App() {
   // Determine correct image source format
   const userImageSource = userImageUrl ? { uri: userImageUrl } : images.avatar;
 
-  const handleSubscriptionPress = (id: string, name: string, category: string | undefined) => {
+  const handleSubscriptionPress = (
+    id: string,
+    name: string,
+    category: string | undefined,
+  ) => {
     const isExpanding = expandedSubscriptionId !== id;
     setExpandedSubscriptionId(isExpanding ? id : null);
     if (isExpanding) {
@@ -44,8 +48,26 @@ export default function App() {
     }
   };
 
+  const handleCreateSubscription = useCallback(
+    (newSubscription: Subscription) => {
+      addSubscription(newSubscription);
+      posthog.capture("subscription_created", {
+        subscription_name: newSubscription.name,
+        subscription_category: newSubscription.category ?? "unknown",
+        subscription_price: newSubscription.price,
+        subscription_frequency: newSubscription.billing,
+      });
+    },
+    [addSubscription, posthog],
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
+      <CreateSubscriptionModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateSubscription}
+      />
       <FlatList
         ListHeaderComponent={() => (
           <>
@@ -55,7 +77,9 @@ export default function App() {
                 <Text className="home-user-name">{userName}</Text>
               </View>
 
-              <Image source={icons.add} className="home-add-icon" />
+              <Pressable onPress={() => setShowCreateModal(true)}>
+                <Image source={icons.add} className="home-add-icon" />
+              </Pressable>
             </View>
 
             <View className="home-balance-card">
@@ -91,12 +115,14 @@ export default function App() {
             <ListHeading title="All Subscriptions" />
           </>
         )}
-        data={HOME_SUBSCRIPTIONS}
+        data={subscriptions}
         renderItem={({ item }) => (
           <SubscriptionCard
             {...item}
             expanded={expandedSubscriptionId === item.id}
-            onPress={() => handleSubscriptionPress(item.id, item.name, item.category)}
+            onPress={() =>
+              handleSubscriptionPress(item.id, item.name, item.category)
+            }
           />
         )}
         extraData={expandedSubscriptionId}

@@ -1,12 +1,18 @@
 import { ClerkProvider, useUser } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack, usePathname, useGlobalSearchParams } from "expo-router";
+import {
+  SplashScreen,
+  Stack,
+  useGlobalSearchParams,
+  usePathname,
+} from "expo-router";
+import { PostHogProvider } from "posthog-react-native";
 import { useEffect, useRef } from "react";
 import { View } from "react-native";
-import { PostHogProvider } from "posthog-react-native";
-import { posthog } from "../src/config/posthog";
 import "../global.css";
+import { posthog } from "../src/config/posthog";
+import { SubscriptionsProvider } from "./context/SubscriptionsContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -96,7 +102,9 @@ export default function RootLayout() {
           propsToCapture: ["testID"],
         }}
       >
-        <RootLayoutInner />
+        <SubscriptionsProvider>
+          <RootLayoutInner />
+        </SubscriptionsProvider>
       </PostHogProvider>
     </ClerkProvider>
   );

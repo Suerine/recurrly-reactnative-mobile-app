@@ -375,7 +375,7 @@
   }
 
   .modal-body {
-    @apply gap-5 p-5;
+    @apply gap-5 p-5 flex-col;
   }
 
   .picker-row {
