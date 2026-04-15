@@ -45,7 +45,7 @@ const SubscriptionCard = ({
         </View>
 
         <View className="sub-price-box">
-          <Text className="sub-price">{formatCurrency(price)}</Text>
+          <Text className="sub-price">{formatCurrency(price, currency)}</Text>
           <Text className="sub-currency">{billing}</Text>
         </View>
       </View>
@@ -112,7 +112,7 @@ const SubscriptionCard = ({
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {status ? formatStatusLabel(status) : status || "Unknown"}
+                  {formatStatusLabel(status)}
                 </Text>
               </View>
             </View>
