@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   },
 
   buttonDanger: {
-    backgroundColor: "##3437eb",
+    backgroundColor: "#eb3a1e",
   },
 
   buttonText: {
