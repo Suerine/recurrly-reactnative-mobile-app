@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { styled } from "nativewind";
 import { usePostHog } from "posthog-react-native";
 import React, { useState } from "react";
-import { Image, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import "../../global.css";
 
@@ -41,14 +41,13 @@ const Settings = () => {
         {/* 🔹 Title */}
         <Text style={styles.title}>Settings</Text>
 
-        {/* 🔹 Profile */}
-        <View style={styles.profile}>
+        {/* <View style={styles.profile}>
           <Image source={userImage} style={styles.avatar} />
           <Text style={styles.name}>{userName}</Text>
           <Text style={styles.email}>{userEmail}</Text>
         </View>
 
-        {/* 🔹 Account Section */}
+        
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
 
@@ -67,7 +66,7 @@ const Settings = () => {
           </Pressable>
         </View>
 
-        {/* 🔹 Preferences */}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Preferences</Text>
 
@@ -93,7 +92,7 @@ const Settings = () => {
           </Pressable>
         </View>
 
-        {/* 🔹 Support */}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
 
@@ -112,7 +111,8 @@ const Settings = () => {
           </Pressable>
         </View>
 
-        {/* <Pressable
+    
+        <Pressable
           style={[
             styles.button,
             styles.buttonDanger,
