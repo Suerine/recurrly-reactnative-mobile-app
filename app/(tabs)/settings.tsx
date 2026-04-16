@@ -4,15 +4,7 @@ import { useRouter } from "expo-router";
 import { styled } from "nativewind";
 import { usePostHog } from "posthog-react-native";
 import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { Image, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 import "../../global.css";
 
@@ -120,8 +112,7 @@ const Settings = () => {
           </Pressable>
         </View>
 
-        {/* 🔹 Logout */}
-        <Pressable
+        {/* <Pressable
           style={[
             styles.button,
             styles.buttonDanger,
@@ -135,7 +126,7 @@ const Settings = () => {
           ) : (
             <Text style={styles.buttonText}>Sign out</Text>
           )}
-        </Pressable>
+        </Pressable> */}
       </View>
     </SafeAreaView>
   );
